@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MR. SANDIA | ERP Honorarios Pro</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root { --cian: #00ffff; --magenta: #ff00ff; --dark: #050505; --panel: #121212; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--dark); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        .logo-container { margin-bottom: 20px; text-align: center; }
+        .logo-container img { max-width: 160px; border-radius: 15px; box-shadow: 0 0 15px rgba(0,255,255,0.2); }
+
+        .panel { background: var(--panel); padding: 25px; border-radius: 16px; width: 100%; max-width: 450px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        h2, h3 { text-align: center; text-transform: uppercase; letter-spacing: 2px; margin-top: 0; background: linear-gradient(90deg, var(--cian), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        input { width: 100%; padding: 12px; margin-bottom: 12px; background: #1e1e1e; color: white; border: 1px solid #333; border-radius: 8px; text-align: center; font-size: 16px; }
+        
+        .radio-box { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
+        .radio-item { display: flex; align-items: center; margin-bottom: 10px; cursor: pointer; }
+        .radio-item input { width: 18px; height: 18px; margin-right: 10px; }
+        .radio-item span { font-size: 14px; color: #ccc; }
+
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; font-size: 14px;}
+        .btn-main { background: linear-gradient(90deg, var(--cian), var(--magenta)); color: white; margin-bottom: 10px;}
+        .btn-sec { background: #333; color: white; margin-bottom: 10px;}
+        .btn-del { background: #b30000; color: white; margin-top: 20px; }
+
+        .res-area { margin-top: 15px; padding: 15px; background: #1a1a1a; border-left: 4px solid var(--cian); border-radius: 8px; }
+        .res-line { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .t-red { color: #ff4d4d; } .t-green { color: var(--cian); font-weight: bold; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 12px 8px; border-bottom: 1px solid #222; text-align: center; font-size: 13px; }
+        th { color: var(--cian); font-size: 11px; }
+        .btn-icon { padding: 0; width: 34px; height: 34px; font-size: 16px; margin: 2px; display: inline-flex; align-items: center; justify-content: center; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; padding: 20px; }
+        .modal-inner { background: var(--panel); padding: 25px; border-radius: 16px; width: 100%; max-width: 400px; border: 1px solid var(--cian); text-align: center; max-height: 95vh; overflow-y: auto; transition: 0.3s; }
+        
+        #ticket-real { background: #1a1a1a; padding: 25px; border-radius: 12px; text-align: left; margin-bottom: 20px; border: 1px dashed #444; color: white; transition: 0.3s; }
+        
+        /* ESTILOS TEMPORALES PARA CELULAR (html2pdf) */
+        .pdf-export-mode { background: white !important; color: black !important; border: 2px solid black !important; border-radius: 0 !important; }
+        .pdf-export-mode * { color: black !important; -webkit-text-fill-color: black !important; }
+        .pdf-export-mode hr { border-top: 1px dashed black !important; }
+
+        /* ESTILOS PARA PC (Impresión Nativa) */
+        @media print {
+            body { background: white !important; }
+            body > *:not(#modal-view) { display: none !important; }
+            #modal-view { position: absolute !important; top: 0 !important; left: 0 !important; background: white !important; display: block !important; }
+            .modal-inner { position: static !important; max-height: none !important; overflow: visible !important; border: none !important; box-shadow: none !important; background: white !important; padding: 0 !important; width: 100% !important; }
+            #modal-controles { display: none !important; }
+            #ticket-real { background: white !important; color: black !important; border: none !important; box-shadow: none !important; margin: 0 !important; padding: 20px !important; width: 100% !important; max-width: 500px !important; }
+            #ticket-real * { color: black !important; -webkit-text-fill-color: black !important; }
+            #ticket-real hr { border-top: 1px dashed black !important; }
+        }
+
+        .footer { margin-top: 20px; text-align: center; font-size: 11px; color: #555; }
+    </style>
+</head>
+<body>
+
+    <div class="logo-container"><img src="logo.png" alt="MR SANDIA"></div>
+
+    <div id="auth-view" class="panel">
+        <h2 id="auth-title">Acceso Agente</h2>
+        
+        <div id="box-login">
+            <input type="email" id="log-email" placeholder="Correo electrónico">
+            <input type="password" id="log-pass" placeholder="Contraseña">
+            <button onclick="entrar()" class="btn-main">Iniciar Sesión</button>
+            <button onclick="toggleAuth()" class="btn-sec" style="background:#222;">Crear Cuenta Nueva</button>
+        </div>
+
+        <div id="box-register" style="display:none;">
+            <input type="text" id="reg-nombre" placeholder="Nombre y Apellido">
+            <input type="email" id="reg-email" placeholder="Correo Electrónico">
+            <input type="password" id="reg-pass" placeholder="Crear Contraseña">
+            <input type="password" id="reg-pass2" placeholder="Repetir Contraseña">
+            <p style="font-size:11px; color:#aaa; text-align:left; margin-top:-5px; margin-bottom:15px; line-height:1.4;">
+                * 6 a 32 caracteres.<br>
+                * Debe incluir mayúsculas, minúsculas y números.<br>
+                * Al menos un carácter especial (ej: @, #, $, -, _).
+            </p>
+            <button onclick="registrar()" class="btn-main" style="background: linear-gradient(90deg, #ff00ff, #8a2be2);">Registrar Agente</button>
+            <button onclick="toggleAuth()" class="btn-sec" style="background:#222;">Volver al Login</button>
+        </div>
+    </div>
+
+    <div id="app-view" style="display:none; width: 100%; max-width: 450px;">
+        <div class="panel">
+            <p style="text-align:center; color:var(--cian); font-size:11px; margin-bottom:10px;">Agente: <span id="user-tag"></span></p>
+            <h2>Calculadora Honorarios</h2>
+            <div class="radio-box">
+                <label class="radio-item"><input type="radio" name="calc-type" value="liq" checked> <span>Monto Líquido (A recibir)</span></label>
+                <label class="radio-item"><input type="radio" name="calc-type" value="bru"> <span>Monto Bruto (Total boleta)</span></label>
+            </div>
+            <input type="number" id="inp-monto" placeholder="Monto Ej: 500000">
+            <input type="text" id="inp-cliente" placeholder="Nombre Cliente">
+            <input type="text" id="inp-rut" placeholder="RUT Cliente (Ej: 12.345.678-9)" maxlength="12">
+            <button onclick="calcular()" class="btn-main">Calcular</button>
+
+            <div id="res-box" class="res-area" style="display:none;">
+                <div class="res-line"><span>Bruto:</span><span id="v-bruto"></span></div>
+                <div class="res-line"><span>SII (14.5%):</span><span id="v-sii" class="t-red"></span></div>
+                <div class="res-line"><span>Líquido:</span><span id="v-liq" class="t-green"></span></div>
+                <button onclick="guardar()" class="btn-sec" style="background:#00ccaa; color:black;">Guardar Boleta</button>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Historial</h3>
+            <table style="width:100%">
+                <thead><tr><th>Cliente</th><th>Monto</th><th>Acción</th></tr></thead>
+                <tbody id="hist-list"></tbody>
+            </table>
+            <button onclick="salir()" class="btn-del">Cerrar Sistema</button>
+        </div>
+    </div>
+
+    <div id="modal-view" class="modal">
+        <div class="modal-inner" id="modal-caja">
+            
+            <div id="ticket-real">
+                <h3 style="text-align:center; margin-bottom:15px; margin-top:0;">DETALLE DE HONORARIOS</h3>
+                <p id="t-fecha" style="text-align:right; font-size:12px; margin-bottom:5px;"></p>
+                <hr style="border:0; border-top: 1px dashed #666; margin: 15px 0;">
+                <p style="margin: 5px 0;"><strong>Cliente:</strong> <span id="d-cli"></span></p>
+                <p style="margin: 5px 0;"><strong>RUT:</strong> <span id="d-rut"></span></p>
+                <hr style="border:0; border-top: 1px dashed #666; margin: 15px 0;">
+                <div class="res-line" style="margin: 5px 0;"><span>Bruto:</span> <span id="d-bru"></span></div>
+                <div class="res-line" style="margin: 5px 0;"><span>SII (14.5%):</span> <span id="d-sii" class="t-red"></span></div>
+                <hr style="border:0; border-top: 1px dashed #666; margin: 15px 0;">
+                <div class="res-line" style="font-size:18px; font-weight:bold; margin-top:15px;"><span>Líquido:</span> <span id="d-liq" class="t-green"></span></div>
+                
+                <p id="pdf-footer" style="text-align:center; font-size:10px; margin-top:30px; color:#888;">Emitido por: Agente</p>
+            </div>
+
+            <div id="modal-controles">
+                <button onclick="descargarPDF()" class="btn-main" style="background:#0088ff; color:white;" id="btn-pdf-text">📄 Descargar PDF</button>
+                <button onclick="cerrarM()" class="btn-sec">Cerrar</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Desarrollado por <strong>MrSandia</strong> & <strong>Gemini</strong></p>
+        <p>¡Para que el SII no te lleve con Maduro!</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        const config = {
+            apiKey: "AIzaSyDR-VEn0XxoseXLtgjKwrtpaRkxSkmo_VQ",
+            authDomain: "calculadora-sii.firebaseapp.com",
+            projectId: "calculadora-sii",
+            storageBucket: "calculadora-sii.firebasestorage.app",
+            messagingSenderId: "822200014792",
+            appId: "1:822200014792:web:dbd5d5d933ec168e66d2fd"
+        };
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const fmt = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+
+        let user = null, temp = null, dbCache = {}, activeId = null;
+
+        // FORMATEADOR DE RUT EN TIEMPO REAL
+        document.getElementById('inp-rut').addEventListener('input', function(e) {
+            // Limpia todo lo que no sea número o la letra k/K
+            let valor = this.value.replace(/[^0-9kK]/g, '').toUpperCase();
+            
+            if (valor.length <= 1) {
+                this.value = valor;
+                return;
+            }
+            
+            // Separa el cuerpo del dígito verificador
+            let cuerpo = valor.slice(0, -1);
+            let dv = valor.slice(-1);
+            
+            // Pone los puntos de miles
+            cuerpo = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            
+            // Une todo con el guion
+            this.value = cuerpo + '-' + dv;
+        });
+
+        onAuthStateChanged(auth, u => {
+            if(u) { 
+                user = u; 
+                document.getElementById('auth-view').style.display='none'; 
+                document.getElementById('app-view').style.display='block'; 
+                
+                const nombreAgente = u.displayName || u.email;
+                document.getElementById('user-tag').innerText = nombreAgente; 
+                document.getElementById('pdf-footer').innerText = "Emitido por: " + nombreAgente;
+                
+                sync(u.uid); 
+            }
+            else { 
+                user = null; 
+                document.getElementById('auth-view').style.display='block'; 
+                document.getElementById('app-view').style.display='none'; 
+            }
+        });
+
+        window.toggleAuth = () => {
+            const boxLogin = document.getElementById('box-login');
+            const boxReg = document.getElementById('box-register');
+            const title = document.getElementById('auth-title');
+
+            if (boxLogin.style.display === 'none') {
+                boxLogin.style.display = 'block';
+                boxReg.style.display = 'none';
+                title.innerText = 'Acceso Agente';
+            } else {
+                boxLogin.style.display = 'none';
+                boxReg.style.display = 'block';
+                title.innerText = 'Nuevo Agente';
+            }
+        };
+
+        window.entrar = () => signInWithEmailAndPassword(auth, document.getElementById('log-email').value, document.getElementById('log-pass').value).catch(e => alert("Error al entrar: " + e.message));
+        window.salir = () => signOut(auth);
+
+        window.registrar = async () => {
+            const email = document.getElementById('reg-email').value;
+            const pass = document.getElementById('reg-pass').value;
+            const pass2 = document.getElementById('reg-pass2').value;
+            const nombre = document.getElementById('reg-nombre').value;
+
+            if(!nombre || !email || !pass || !pass2) return alert("Por favor, llena todos los campos.");
+            if(pass !== pass2) return alert("Las contraseñas no coinciden. Escríbelas de nuevo.");
+            
+            const hasUpper = /[A-Z]/.test(pass);
+            const hasLower = /[a-z]/.test(pass);
+            const hasNumber = /[0-9]/.test(pass);
+            const hasSpecial = /[^A-Za-z0-9]/.test(pass);
+
+            if(pass.length < 6 || pass.length > 32 || !hasUpper || !hasLower || !hasNumber || !hasSpecial) {
+                return alert("Seguridad rechazada: La contraseña debe tener entre 6 y 32 caracteres, incluir mayúsculas, minúsculas, números y al menos un carácter especial.");
+            }
+
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                await updateProfile(cred.user, { displayName: nombre });
+                
+                document.getElementById('user-tag').innerText = nombre;
+                document.getElementById('pdf-footer').innerText = "Emitido por: " + nombre;
+                
+                alert("¡Agente registrado con éxito! Bienvenido " + nombre);
+            } catch(e) {
+                alert("Hubo un error al registrar: " + e.message);
+            }
+        };
+
+        window.calcular = () => {
+            const v = parseFloat(document.getElementById('inp-monto').value);
+            const t = document.querySelector('input[name="calc-type"]:checked').value;
+            if(!v) return;
+            let b, i, l;
+            if(t==='liq'){ b=v/0.855; i=b*0.145; l=v; } else { b=v; i=v*0.145; l=v-i; }
+            temp = { b, i, l, c: document.getElementById('inp-cliente').value || "S/N", r: document.getElementById('inp-rut').value || "S/R", date: new Date().toLocaleDateString('es-CL') };
+            document.getElementById('v-bruto').innerText = fmt.format(b);
+            document.getElementById('v-sii').innerText = "- "+fmt.format(i);
+            document.getElementById('v-liq').innerText = fmt.format(l);
+            document.getElementById('res-box').style.display='block';
+        };
+
+        window.guardar = async () => {
+            await addDoc(collection(db, "boletas"), { ...temp, userId: user.uid, createdAt: serverTimestamp() });
+            document.getElementById('res-box').style.display='none';
+            document.getElementById('inp-monto').value = '';
+            document.getElementById('inp-rut').value = ''; // Limpiamos el RUT al guardar
+        };
+
+        function sync(uid) {
+            onSnapshot(query(collection(db, "boletas"), where("userId", "==", uid)), snap => {
+                const list = document.getElementById('hist-list'); list.innerHTML = '';
+                let arr = []; snap.forEach(d => arr.push({id: d.id, ...d.data()}));
+                arr.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+                arr.forEach(d => {
+                    dbCache[d.id] = d;
+                    list.innerHTML += `<tr><td>${d.c}</td><td class="t-green">${fmt.format(d.l)}</td><td><button class="btn-main btn-icon" onclick="openM('${d.id}')">👁️</button><button class="btn-sec btn-icon" style="background:#444" onclick="delB('${d.id}')">🗑️</button></td></tr>`;
+                });
+            });
+        }
+
+        window.openM = id => {
+            activeId = id;
+            const d = dbCache[id];
+            document.getElementById('d-cli').innerText = d.c;
+            document.getElementById('d-rut').innerText = d.r;
+            document.getElementById('d-bru').innerText = fmt.format(d.b);
+            document.getElementById('d-sii').innerText = "- " + fmt.format(d.i);
+            document.getElementById('d-liq').innerText = fmt.format(d.l);
+            document.getElementById('t-fecha').innerText = d.date;
+
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            document.getElementById('btn-pdf-text').innerText = isMobile ? "📄 Generar Archivo PDF" : "📄 Imprimir/Guardar PDF";
+
+            document.getElementById('modal-view').style.display='flex';
+        };
+
+        window.cerrarM = () => document.getElementById('modal-view').style.display='none';
+        window.delB = async id => { if(confirm("¿Borrar?")) await deleteDoc(doc(db, "boletas", id)); };
+
+        // DESCARGA PDF DUAL
+        window.descargarPDF = () => {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (!isMobile) {
+                window.print();
+            } else {
+                const ticket = document.getElementById('ticket-real');
+                const cajaModal = document.getElementById('modal-caja');
+                const controles = document.getElementById('modal-controles');
+                const nombreCliente = document.getElementById('d-cli').innerText;
+
+                controles.style.display = 'none';
+                cajaModal.style.maxHeight = 'none';
+                cajaModal.style.overflow = 'visible';
+                
+                ticket.classList.add('pdf-export-mode');
+
+                const opt = {
+                    margin: 10,
+                    filename: `Boleta_${nombreCliente.replace(/\s+/g, '_')}.pdf`,
+                    image: { type: 'jpeg', quality: 1 },
+                    html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', scrollY: 0 },
+                    jsPDF: { unit: 'mm', format: 'a5', orientation: 'portrait' }
+                };
+
+                html2pdf().set(opt).from(ticket).save().then(() => {
+                    ticket.classList.remove('pdf-export-mode');
+                    cajaModal.style.maxHeight = '95vh';
+                    cajaModal.style.overflowY = 'auto';
+                    controles.style.display = 'block';
+                }).catch(err => {
+                    alert('Error al generar PDF: ' + err);
+                    controles.style.display = 'block'; 
+                });
+            }
+        };
+    </script>
+</body>
+</html>
