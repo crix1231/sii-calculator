@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jekyll | Calculadora & Presupuesto</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
+    <style>
+        /* ========================================== */
+        /* --- COLORES Y VARIABLES GLOBALES --- */
+        /* ========================================== */
+        :root { --cian: #00ffff; --magenta: #ff00ff; --dark: #050505; --panel: #121212; --gray: #1e1e1e; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: var(--dark); color: white; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        
+        /* ========================================== */
+        /* --- ESTILOS DE PANELES Y LOGO --- */
+        /* ========================================== */
+        .logo-container { margin-bottom: 20px; text-align: center; }
+        .logo-container img { max-width: 140px; border-radius: 15px; box-shadow: 0 0 15px rgba(0,255,255,0.2); }
+
+        .panel { background: var(--panel); padding: 25px; border-radius: 16px; width: 100%; max-width: 500px; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        h2, h3 { text-align: center; text-transform: uppercase; letter-spacing: 2px; margin-top: 0; background: linear-gradient(90deg, var(--cian), var(--magenta)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+        /* ========================================== */
+        /* --- ESTILOS DE PESTAÑAS (TABS) Y BOTONES --- */
+        /* ========================================== */
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; width: 100%; max-width: 500px; }
+        .tab-btn { flex: 1; padding: 12px; border: 1px solid #333; background: #1a1a1a; color: #888; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+        .tab-btn.active { background: var(--gray); color: var(--cian); border-color: var(--cian); }
+
+        button { width: 100%; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: 0.2s; font-size: 13px;}
+        .btn-main { background: linear-gradient(90deg, var(--cian), var(--magenta)); color: white; margin-bottom: 10px;}
+        .btn-sec { background: #333; color: white; margin-bottom: 10px;}
+        .btn-del { background: #b30000; color: white; margin-top: 10px; }
+        .btn-add { background: #004444; color: var(--cian); margin-bottom: 15px; border: 1px dashed var(--cian); }
+        .btn-icon { padding: 0; width: 32px; height: 32px; font-size: 14px; margin: 2px; display: inline-flex; align-items: center; justify-content: center; }
+
+        /* ========================================== */
+        /* --- ESTILOS DE FORMULARIOS (INPUTS) --- */
+        /* ========================================== */
+        input, textarea { width: 100%; padding: 12px; margin-bottom: 12px; background: var(--gray); color: white; border: 1px solid #333; border-radius: 8px; text-align: center; font-size: 15px; font-family: inherit; }
+        textarea { text-align: left; resize: none; height: 80px; }
+        .input-label { display: block; text-align: left; font-size: 12px; color: var(--cian); margin-bottom: 5px; font-weight: bold; margin-left: 5px; }
+        
+        .radio-box { background: #1a1a1a; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #333; }
+        .radio-item { display: flex; align-items: center; margin-bottom: 10px; cursor: pointer; }
+        .radio-item input { width: 18px; height: 18px; margin-right: 10px; margin-bottom: 0; }
+        .radio-item span { font-size: 13px; color: #ccc; }
+
+        .item-row { display: flex; gap: 8px; margin-bottom: 8px; }
+        .item-row input:first-child { flex: 3; text-align: left; }
+        .item-row input:last-child { flex: 1.5; }
+
+        /* ========================================== */
+        /* --- RESULTADOS Y TABLA DE HISTORIAL --- */
+        /* ========================================== */
+        .res-area { margin-top: 15px; padding: 15px; background: #1a1a1a; border-left: 4px solid var(--cian); border-radius: 8px; }
+        .res-line { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px;}
+        .t-red { color: #ff4d4d; } .t-green { color: var(--cian); font-weight: bold; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px 5px; border-bottom: 1px solid #222; text-align: center; font-size: 12px; }
+        th { color: var(--cian); font-size: 10px; }
+
+        /* ========================================== */
+        /* --- ESTILOS DE MODAL (VISTA PREVIA PDF) --- */
+        /* ========================================== */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+        .modal-inner { background: var(--panel); padding: 20px; border-radius: 16px; width: 90%; max-width: 450px; border: 1px solid var(--cian); text-align: center; max-height: 95vh; overflow-y: auto; }
+        
+        #ticket-real { background: #1a1a1a; padding: 25px; border-radius: 12px; text-align: left; margin-bottom: 20px; border: 1px dashed #444; color: white; }
+        
+        /* ========================================== */
+        /* --- ESTILOS EXCLUSIVOS PARA IMPRESIÓN (PDF) --- */
+        /* ========================================== */
+        .pdf-export-mode { background: white !important; color: black !important; border: 2px solid black !important; border-radius: 0 !important; }
+        .pdf-export-mode * { color: black !important; -webkit-text-fill-color: black !important; }
+        .pdf-export-mode hr { border-top: 1px dashed black !important; }
+
+        @media print {
+            body { background: white !important; }
+            body > *:not(#modal-view) { display: none !important; }
+            #modal-view { position: absolute !important; top: 0 !important; left: 0 !important; background: white !important; display: block !important; }
+            .modal-inner { position: static !important; max-height: none !important; overflow: visible !important; border: none !important; box-shadow: none !important; background: white !important; padding: 0 !important; width: 100% !important; }
+            #modal-controles { display: none !important; }
+            #ticket-real { background: white !important; color: black !important; border: none !important; box-shadow: none !important; margin: 0 !important; padding: 20px !important; width: 100% !important; max-width: 600px !important; }
+            #ticket-real * { color: black !important; -webkit-text-fill-color: black !important; }
+            #ticket-real hr { border-top: 1px dashed black !important; }
+        }
+
+        .footer { margin-top: 20px; text-align: center; font-size: 11px; color: #555; }
+    </style>
+</head>
+<body>
+
+    <div class="logo-container"><img src="logo.png" alt="JEKYLL"></div>
+
+    <div id="auth-view" class="panel">
+        <h2 id="auth-title">Acceso Agente</h2>
+        
+        <div id="box-login">
+            <input type="email" id="log-email" placeholder="Correo electrónico">
+            <input type="password" id="log-pass" placeholder="Contraseña">
+            <p onclick="recuperarPass()" style="font-size:12px; color:var(--cian); text-align:right; margin-top:-5px; margin-bottom:15px; cursor:pointer; text-decoration:underline;">¿Olvidaste tu contraseña?</p>
+            <button onclick="entrar()" class="btn-main">Iniciar Sesión</button>
+            <button onclick="toggleAuth()" class="btn-sec" style="background:#222;">Crear Cuenta Nueva</button>
+        </div>
+
+        <div id="box-register" style="display:none;">
+            <input type="text" id="reg-nombre" placeholder="Nombre y Apellido">
+            <input type="email" id="reg-email" placeholder="Correo Electrónico">
+            <input type="password" id="reg-pass" placeholder="Crear Contraseña">
+            <input type="password" id="reg-pass2" placeholder="Repetir Contraseña">
+            <button onclick="registrar()" class="btn-main" style="background: linear-gradient(90deg, #ff00ff, #8a2be2);">Registrar Agente</button>
+            <button onclick="toggleAuth()" class="btn-sec" style="background:#222;">Volver al Login</button>
+        </div>
+    </div>
+
+    <div id="app-view" style="display:none; width: 100%; max-width: 500px;">
+        
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-boleta" onclick="switchTab('boleta')">Boleta SII</button>
+            <button class="tab-btn" id="tab-presupuesto" onclick="switchTab('presupuesto')">Presupuesto</button>
+        </div>
+
+        <div id="view-boleta" class="panel">
+            <p style="text-align:center; color:var(--cian); font-size:11px; margin-bottom:10px;">Agente: <span id="user-tag"></span></p>
+            <h2>Calculadora Honorarios</h2>
+            <div class="radio-box">
+                <label class="radio-item"><input type="radio" name="calc-type" value="liq" checked> <span>Monto Líquido (Recibo)</span></label>
+                <label class="radio-item"><input type="radio" name="calc-type" value="bru"> <span>Monto Bruto (Total)</span></label>
+            </div>
+            <input type="number" id="inp-monto" placeholder="Monto Ej: 500000">
+            <input type="text" id="inp-cliente" placeholder="Nombre Cliente / Empresa">
+            <input type="text" id="inp-rut" placeholder="RUT Cliente" maxlength="12">
+            <input type="text" id="inp-direccion" placeholder="Dirección y Comuna">
+            <input type="text" id="inp-descripcion" placeholder="Descripción del Servicio">
+            <input type="number" id="inp-num-boleta" placeholder="N° de Boleta">
+            <div class="radio-box">
+                <p style="margin: 0 0 10px 0; font-size: 12px; color: var(--cian); font-weight:bold;">¿Quién paga la retención?</p>
+                <label class="radio-item"><input type="radio" name="calc-retencion" value="empresa" checked> <span>La Empresa</span></label>
+                <label class="radio-item"><input type="radio" name="calc-retencion" value="yo"> <span>Yo mismo</span></label>
+            </div>
+            <button onclick="calcularBoleta()" class="btn-main">Calcular y Ver</button>
+            
+            <div id="res-box" class="res-area" style="display:none;">
+                <div class="res-line"><span>Bruto:</span><span id="v-bruto"></span></div>
+                <div class="res-line"><span>Retención SII (15.25%):</span><span id="v-sii" class="t-red"></span></div>
+                <div class="res-line" style="border-bottom: 1px solid #444; padding-bottom:8px; margin-bottom:8px;"><span>Líquido:</span><span id="v-liq" class="t-green"></span></div>
+                <div id="msg-retencion" style="font-size:12px; color:#aaa; text-align:center; margin-bottom:10px; line-height:1.4;"></div>
+                <button onclick="guardarBoleta()" class="btn-sec" style="background:#00ccaa; color:black;">Guardar Boleta</button>
+            </div>
+        </div>
+
+        <div id="view-presupuesto" class="panel" style="display:none;">
+            <h2>Nuevo Presupuesto</h2>
+            <input type="text" id="pre-cliente" placeholder="Cliente / Empresa">
+            <input type="text" id="pre-rut" placeholder="RUT Cliente" maxlength="12">
+            <input type="text" id="pre-direccion" placeholder="Dirección y Comuna">
+            
+            <input type="number" id="pre-num" placeholder="N° de Presupuesto (Ej: 1)">
+            
+            <div class="radio-box">
+                <p style="margin: 0 0 10px 0; font-size: 12px; color: var(--cian); font-weight:bold;">¿Valores ingresados son Líquidos?</p>
+                <label class="radio-item"><input type="radio" name="pre-calc-type" value="liq" checked> <span>Sí (Sumar 15.25% para el SII)</span></label>
+                <label class="radio-item"><input type="radio" name="pre-calc-type" value="bru"> <span>No (Ya incluyen impuestos)</span></label>
+            </div>
+
+            <div id="items-container">
+                <div class="item-row">
+                    <input type="text" placeholder="Servicio (Ej: Grabación)" class="i-desc">
+                    <input type="number" placeholder="Precio" class="i-price">
+                </div>
+            </div>
+            <button onclick="addItem()" class="btn-add">+ Añadir Línea de Servicio</button>
+            
+            <label class="input-label">Vigencia del Presupuesto (Días)</label>
+            <input type="number" id="pre-vigencia" placeholder="Días de vigencia" value="15">
+            
+            <textarea id="pre-notas" placeholder="Notas adicionales o condiciones..."></textarea>
+            <button onclick="guardarPresupuesto()" class="btn-main">Generar Presupuesto</button>
+        </div>
+
+        <div class="panel">
+            <h3 id="hist-title">Historial de Boletas</h3>
+            <table id="hist-table">
+                <thead><tr><th>Ref</th><th>Cliente</th><th>Total</th><th>Acción</th></tr></thead>
+                <tbody id="hist-list"></tbody>
+            </table>
+            <button onclick="descargarExcel()" class="btn-main" style="background: linear-gradient(90deg, #28a745, #218838); margin-top:15px;">📊 Exportar Reporte Excel</button>
+            <button onclick="salir()" class="btn-del">Cerrar Sesión</button>
+        </div>
+    </div>
+
+    <div id="modal-view" class="modal">
+        <div class="modal-inner" id="modal-caja">
+            
+            <div id="ticket-real">
+                <p style="text-align:center; font-size:10px; color:#888; margin-bottom:5px; font-weight:bold; letter-spacing:1px;">JEKYLL | CALCULADORA & PRESUPUESTO</p>
+                <h3 id="pdf-tipo" style="text-align:center; margin-bottom:5px;"></h3>
+                <p style="text-align:right; font-size:12px; color:#888;">
+                    <span id="d-label-n"></span> <strong id="d-numb" style="color:var(--cian);"></strong> | <span id="d-fecha"></span>
+                </p>
+                <hr style="border:0; border-top: 1px dashed #666; margin: 15px 0;">
+                <p style="margin: 5px 0; font-size:13px;"><strong>Cliente:</strong> <span id="d-cli"></span></p>
+                <p style="margin: 5px 0; font-size:13px;"><strong>RUT:</strong> <span id="d-rut"></span></p>
+                <p style="margin: 5px 0; font-size:13px;"><strong>Dirección:</strong> <span id="d-dir"></span></p>
+                
+                <div id="d-area-boleta">
+                    <p style="margin: 5px 0; font-size:13px;"><strong>Descripción:</strong> <span id="d-desc"></span></p>
+                    <p style="margin: 5px 0; font-size:12px; color:var(--magenta); margin-top:10px;">Agente Retenedor: <strong id="d-ret-tipo"></strong></p>
+                </div>
+
+                <div id="d-area-presupuesto" style="display:none;">
+                    <table style="width:100%; margin:15px 0; border:1px solid #444;">
+                        <thead><tr style="background:#222;"><th style="text-align:left; padding:5px;">Servicio</th><th>Valor</th></tr></thead>
+                        <tbody id="d-items-list"></tbody>
+                    </table>
+                    <p style="font-size:11px; color:#aaa;" id="d-notas"></p>
+                    <p style="font-size:12px; font-weight:bold; color:var(--magenta); margin-top:10px;">Válido por <span id="d-vigencia-dias"></span> días hasta: <span id="d-validez"></span></p>
+                </div>
+                
+                <hr style="border:0; border-top: 1px dashed #666; margin: 15px 0;">
+                
+                <div id="d-res-subtotal" class="res-line"><span>Monto Bruto:</span> <span id="d-bru"></span></div>
+                <div id="d-res-sii" class="res-line"><span>Impuesto SII (15.25%):</span> <span id="d-sii" class="t-red"></span></div>
+                <div class="res-line" style="font-size:18px; font-weight:bold; margin-top:15px;"><span id="d-label-total">Total:</span> <span id="d-liq" class="t-green"></span></div>
+                
+                <p id="pdf-footer" style="text-align:center; font-size:10px; margin-top:30px; color:#888;"></p>
+            </div>
+
+            <div id="modal-controles">
+                <button id="btn-convertir" class="btn-main" style="background:#ff8800; display:none;">⚡ Convertir a Boleta SII</button>
+                <button onclick="descargarPDF()" class="btn-main" style="background:#0088ff;">📄 Descargar PDF</button>
+                <button onclick="cerrarM()" class="btn-sec">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Desarrollado por <strong>Jekyll & Gemini</strong></p>
+        <p>¡Para que el SII no te lleve con Maduro!</p>
+    </div>
+
+    <script type="module">
+        // === CONEXIÓN A BASE DE DATOS FIREBASE ===
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, onSnapshot, serverTimestamp, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+        const config = {
+            apiKey: "AIzaSyDR-VEn0XxoseXLtgjKwrtpaRkxSkmo_VQ",
+            authDomain: "calculadora-sii.firebaseapp.com",
+            projectId: "calculadora-sii",
+            storageBucket: "calculadora-sii.firebasestorage.app",
+            messagingSenderId: "822200014792",
+            appId: "1:822200014792:web:dbd5d5d933ec168e66d2fd"
+        };
+
+        const app = initializeApp(config);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const fmt = new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 });
+
+        let user = null, tempDoc = null, dbCache = {}, currentMode = 'boleta', currentBoletas = [], currentPresupuestos = [];
+
+        // === FORMATEO AUTOMÁTICO DE RUT ===
+        const formatRut = (el) => {
+            el.addEventListener('input', function() {
+                let v = this.value.replace(/[^0-9kK]/g, '').toUpperCase();
+                if(v.length > 1) {
+                    let c = v.slice(0, -1).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                    this.value = c + '-' + v.slice(-1);
+                } else this.value = v;
+            });
+        };
+        formatRut(document.getElementById('inp-rut'));
+        formatRut(document.getElementById('pre-rut'));
+
+        // === VERIFICACIÓN DE ESTADO DEL USUARIO ===
+        onAuthStateChanged(auth, u => {
+            if(u) { 
+                user = u; document.getElementById('auth-view').style.display='none'; document.getElementById('app-view').style.display='block';
+                document.getElementById('user-tag').innerText = u.displayName || u.email;
+                syncData(u.uid); 
+            } else { 
+                user = null; document.getElementById('auth-view').style.display='block'; document.getElementById('app-view').style.display='none'; 
+            }
+        });
+
+        // === CAMBIO ENTRE PESTAÑAS (Boleta / Presupuesto) ===
+        window.switchTab = (tab) => {
+            currentMode = tab;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab-' + tab).classList.add('active');
+            document.getElementById('view-boleta').style.display = tab === 'boleta' ? 'block' : 'none';
+            document.getElementById('view-presupuesto').style.display = tab === 'presupuesto' ? 'block' : 'none';
+            document.getElementById('hist-title').innerText = tab === 'boleta' ? 'Historial de Boletas' : 'Historial de Presupuestos';
+            renderHistorial();
+        };
+
+        // === MÓDULO DE BOLETAS (Cálculo y Guardado) ===
+        window.calcularBoleta = () => {
+            const v = parseFloat(document.getElementById('inp-monto').value);
+            const t = document.querySelector('input[name="calc-type"]:checked').value;
+            const rTipo = document.querySelector('input[name="calc-retencion"]:checked').value;
+            if(!v || isNaN(v)) return alert("Ingresa un monto válido");
+            
+            let b = (t==='liq') ? v / 0.8475 : v;
+            let i = b * 0.1525;
+            let l = b - i;
+            
+            tempDoc = { 
+                type: 'boleta', b, i, l, 
+                c: document.getElementById('inp-cliente').value || "S/N", 
+                r: document.getElementById('inp-rut').value || "S/R",
+                dir: document.getElementById('inp-direccion').value || "",
+                desc: document.getElementById('inp-descripcion').value || "Sin descripción",
+                numB: document.getElementById('inp-num-boleta').value || "1",
+                retTipo: rTipo,
+                date: new Date().toLocaleDateString('es-CL')
+            };
+            
+            document.getElementById('v-bruto').innerText = fmt.format(b);
+            document.getElementById('v-sii').innerText = "- " + fmt.format(i);
+            document.getElementById('v-liq').innerText = fmt.format(l);
+            
+            const msgBox = document.getElementById('msg-retencion');
+            if(rTipo === 'empresa') {
+                msgBox.innerHTML = `✅ La empresa pagará el impuesto. Tú recibes <strong style="color:var(--cian)">${fmt.format(l)}</strong> líquidos a tu cuenta.`;
+            } else {
+                msgBox.innerHTML = `⚠️ Tú pagas el impuesto. Cóbrale <strong style="color:var(--cian)">${fmt.format(b)}</strong> al cliente y guarda <strong>${fmt.format(i)}</strong> para el SII.`;
+            }
+            document.getElementById('res-box').style.display = 'block';
+        };
+
+        window.guardarBoleta = async () => {
+            if(!tempDoc || tempDoc.type !== 'boleta') return;
+            await addDoc(collection(db, "boletas"), { ...tempDoc, userId: user.uid, createdAt: serverTimestamp() });
+            document.getElementById('res-box').style.display = 'none';
+            document.getElementById('inp-monto').value = '';
+            alert("Boleta Guardada");
+        };
+
+        // === MÓDULO DE PRESUPUESTOS (Cálculo y Guardado) ===
+        window.addItem = () => {
+            const row = document.createElement('div');
+            row.className = 'item-row';
+            row.innerHTML = `<input type="text" placeholder="Servicio" class="i-desc"><input type="number" placeholder="Precio" class="i-price">`;
+            document.getElementById('items-container').appendChild(row);
+        };
+
+        window.guardarPresupuesto = async () => {
+            const itemsInput = document.querySelectorAll('.item-row');
+            const isLiq = document.querySelector('input[name="pre-calc-type"]:checked').value === 'liq';
+            const items = [];
+            let totalBruto = 0, totalImpuesto = 0, totalFinal = 0;
+
+            itemsInput.forEach(row => {
+                const d = row.querySelector('.i-desc').value;
+                const val = parseFloat(row.querySelector('.i-price').value || 0);
+                if(d && !isNaN(val)) {
+                    let b, i, l;
+                    if(isLiq) { b = val / 0.8475; i = b * 0.1525; l = val; }
+                    else { b = val; i = val * 0.1525; l = val - i; }
+                    items.push({d, p: b, tax: i, liq: l});
+                    totalBruto += b; totalImpuesto += i; totalFinal += l;
+                }
+            });
+
+            if(items.length === 0) return alert("Agrega al menos un ítem válido");
+            
+            const vigenciaDias = parseInt(document.getElementById('pre-vigencia').value || 15);
+            const pData = {
+                type: 'presupuesto', userId: user.uid,
+                c: document.getElementById('pre-cliente').value || "S/N",
+                r: document.getElementById('pre-rut').value || "S/R",
+                dir: document.getElementById('pre-direccion').value || "",
+                numP: document.getElementById('pre-num').value || "1",
+                items, totalBruto, totalImpuesto, totalFinal,
+                vigencia: vigenciaDias,
+                notas: document.getElementById('pre-notas').value,
+                date: new Date().toLocaleDateString('es-CL'),
+                validez: new Date(Date.now() + vigenciaDias*24*60*60*1000).toLocaleDateString('es-CL'),
+                createdAt: serverTimestamp()
+            };
+            await addDoc(collection(db, "presupuestos"), pData);
+            alert("Presupuesto Guardado");
+            document.getElementById('pre-cliente').value = '';
+            document.getElementById('items-container').innerHTML = '<div class="item-row"><input type="text" placeholder="Servicio" class="i-desc"><input type="number" placeholder="Precio" class="i-price"></div>';
+        };
+
+        // === SINCRONIZACIÓN Y LECTURA DE HISTORIAL ===
+        function syncData(uid) {
+            onSnapshot(query(collection(db, "boletas"), where("userId", "==", uid)), snap => {
+                currentBoletas = []; snap.forEach(d => currentBoletas.push({id: d.id, ...d.data()}));
+                if(currentMode === 'boleta') renderHistorial();
+            });
+            onSnapshot(query(collection(db, "presupuestos"), where("userId", "==", uid)), snap => {
+                currentPresupuestos = []; snap.forEach(d => currentPresupuestos.push({id: d.id, ...d.data()}));
+                if(currentMode === 'presupuesto') renderHistorial();
+            });
+        }
+
+        function renderHistorial() {
+            const list = document.getElementById('hist-list');
+            list.innerHTML = '';
+            const data = currentMode === 'boleta' ? currentBoletas : currentPresupuestos;
+            data.sort((a,b) => (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0));
+            
+            let maxBoleta = 0;
+            let maxPre = 0;
+
+            data.forEach(d => {
+                dbCache[d.id] = d;
+                const ref = d.type === 'boleta' ? `#${d.numB}` : `PRE-${d.numP || '1'}`;
+                const monto = d.type === 'boleta' ? d.l : d.totalFinal;
+                list.innerHTML += `<tr><td>${ref}</td><td>${d.c}</td><td class="t-green">${fmt.format(monto)}</td><td><button class="btn-main btn-icon" onclick="openDoc('${d.id}')">👁️</button><button class="btn-sec btn-icon" onclick="delDoc('${d.id}')">🗑️</button></td></tr>`;
+            });
+
+            // Lógica de auto-sugerencia separada para boletas y presupuestos
+            if(currentMode === 'boleta') {
+                currentBoletas.forEach(d => { let n = parseInt(d.numB); if(!isNaN(n) && n > maxBoleta) maxBoleta = n; });
+                document.getElementById('inp-num-boleta').value = maxBoleta > 0 ? (maxBoleta + 1) : 1;
+            } else {
+                currentPresupuestos.forEach(d => { let n = parseInt(d.numP); if(!isNaN(n) && n > maxPre) maxPre = n; });
+                document.getElementById('pre-num').value = maxPre > 0 ? (maxPre + 1) : 1;
+            }
+        }
+
+        // === VISUALIZADOR DE DOCUMENTOS Y MODAL ===
+        window.openDoc = id => {
+            const d = dbCache[id];
+            document.getElementById('d-fecha').innerText = d.date;
+            document.getElementById('d-cli').innerText = d.c;
+            document.getElementById('d-rut').innerText = d.r;
+            document.getElementById('d-dir').innerText = d.dir || "No registrada";
+            
+            // Corrección: Solo muestra el nombre del agente en el PDF
+            document.getElementById('pdf-footer').innerText = "Emitido por: " + (user.displayName || user.email);
+
+            if(d.type === 'boleta') {
+                document.getElementById('pdf-tipo').innerText = "DETALLE DE HONORARIOS";
+                document.getElementById('d-label-n').innerText = "N° Boleta:";
+                document.getElementById('d-numb').innerText = d.numB;
+                document.getElementById('d-area-boleta').style.display = 'block';
+                document.getElementById('d-area-presupuesto').style.display = 'none';
+                document.getElementById('d-desc').innerText = d.desc;
+                document.getElementById('d-ret-tipo').innerText = d.retTipo === 'empresa' ? 'Empresa' : 'Emisor';
+                
+                document.getElementById('d-res-subtotal').style.display = 'flex';
+                document.getElementById('d-res-sii').style.display = 'flex';
+                document.getElementById('d-bru').innerText = fmt.format(d.b);
+                document.getElementById('d-sii').innerText = "- " + fmt.format(d.i);
+                document.getElementById('d-liq').innerText = fmt.format(d.l);
+                document.getElementById('d-label-total').innerText = "Total Líquido:";
+                document.getElementById('btn-convertir').style.display = 'none';
+            } else {
+                document.getElementById('pdf-tipo').innerText = "PRESUPUESTO DE SERVICIOS";
+                document.getElementById('d-label-n').innerText = "Ref:";
+                document.getElementById('d-numb').innerText = "PRE-" + (d.numP || "1");
+                document.getElementById('d-area-boleta').style.display = 'none';
+                document.getElementById('d-area-presupuesto').style.display = 'block';
+                document.getElementById('d-notas').innerText = d.notas ? "Notas: " + d.notas : "";
+                document.getElementById('d-validez').innerText = d.validez;
+                document.getElementById('d-vigencia-dias').innerText = d.vigencia;
+                
+                const itemList = document.getElementById('d-items-list');
+                itemList.innerHTML = '';
+                d.items.forEach(i => itemList.innerHTML += `<tr><td style="text-align:left;">${i.d}</td><td>${fmt.format(i.p)}</td></tr>`);
+                
+                // Comercial: Ocultar desglose de SII para no confundir al cliente
+                document.getElementById('d-res-subtotal').style.display = 'none';
+                document.getElementById('d-res-sii').style.display = 'none';
+                document.getElementById('d-liq').innerText = fmt.format(d.totalBruto);
+                document.getElementById('d-label-total').innerText = "Total a Pagar:";
+                
+                // Botón para traspasar presupuesto a calculadora de boleta
+                document.getElementById('btn-convertir').style.display = 'block';
+                document.getElementById('btn-convertir').onclick = () => {
+                    switchTab('boleta');
+                    document.getElementById('inp-cliente').value = d.c;
+                    document.getElementById('inp-rut').value = d.r;
+                    document.getElementById('inp-monto').value = Math.round(d.totalFinal);
+                    document.getElementById('inp-direccion').value = d.dir;
+                    document.getElementById('inp-descripcion').value = d.items[0].d + "... (Viene de presupuesto)";
+                    cerrarM();
+                };
+            }
+            document.getElementById('modal-view').style.display = 'flex';
+        };
+
+        window.cerrarM = () => document.getElementById('modal-view').style.display='none';
+        window.delDoc = async id => { if(confirm("¿Borrar permanentemente?")) await deleteDoc(doc(db, currentMode === 'boleta' ? "boletas" : "presupuestos", id)); };
+
+        // === MOTOR DE EXPORTACIÓN (EXCEL UNIVERSAL) ===
+        window.descargarExcel = () => {
+            const data = currentMode === 'boleta' ? currentBoletas : currentPresupuestos;
+            if(data.length === 0) return alert("No hay datos para exportar");
+
+            let html = `<html><head><meta charset="UTF-8">
+                <style>
+                    .num { mso-number-format:"\\$ #,##0"; }
+                    .txt { mso-number-format:"\\@"; }
+                </style>
+            </head><body style="background:#050505;">
+                <table border="1" style="border-collapse:collapse; font-family:Arial; width:100%; text-align:center;">
+                    <tr style="background:#121212; color:#00ffff; font-weight:bold;">
+                        <td colspan="7" style="text-align:right; font-size:16px;">TOTAL BRUTO ACUMULADO:</td>
+                        <td class="num" style="font-size:16px;">=SUM(H6:H500)</td>
+                        <td colspan="2"></td>
+                    </tr>
+                    <tr style="background:#121212; color:#00ffcc; font-weight:bold;">
+                        <td colspan="7" style="text-align:right; font-size:16px;">TOTAL LÍQUIDO (AL BOLSILLO):</td>
+                        <td class="num" style="font-size:16px;">=SUM(J6:J500)</td>
+                        <td colspan="2"></td>
+                    </tr>
+                    <tr style="background:#121212; color:#ff00ff; font-weight:bold;">
+                        <td colspan="7" style="text-align:right; font-size:16px;">IMPUESTO A PAGAR POR MÍ (F29):</td>
+                        <td class="num" style="font-size:16px;">=SUMIF(G6:G500, "Yo", I6:I500)</td>
+                        <td colspan="2"></td>
+                    </tr>
+                    
+                    <tr style="background:#000;"><td colspan="10" height="20"></td></tr>
+
+                    <tr style="background:#121212; color:#00ffff; font-weight:bold;">
+                        <th width="100">FECHA</th>
+                        <th width="80">REF/N°</th>
+                        <th width="200">CLIENTE</th>
+                        <th width="120">RUT</th>
+                        <th width="250">DIRECCIÓN</th>
+                        <th width="250">DESCRIPCIÓN</th>
+                        <th width="100">RETENEDOR</th>
+                        <th width="120">BRUTO</th>
+                        <th width="120">IMPUESTO</th>
+                        <th width="120">LÍQUIDO</th>
+                    </tr>`;
+            
+            data.forEach((d, idx) => {
+                const b = d.type === 'boleta' ? d.b : d.totalBruto;
+                const i = d.type === 'boleta' ? d.i : d.totalImpuesto;
+                const l = d.type === 'boleta' ? d.l : d.totalFinal;
+                const ref = d.type === 'boleta' ? d.numB : ('PRE-' + (d.numP || '1'));
+                const ret = d.type === 'boleta' ? (d.retTipo === 'empresa' ? 'Empresa' : 'Yo') : 'N/A';
+                const bg = idx % 2 === 0 ? '#1a1a1a' : '#222222';
+                
+                html += `<tr style="background:${bg}; color:white;">
+                    <td class="txt">${d.date}</td>
+                    <td class="txt">${ref}</td>
+                    <td class="txt">${d.c}</td>
+                    <td class="txt">${d.r}</td>
+                    <td class="txt">${d.dir || ''}</td>
+                    <td class="txt">${d.desc || ''}</td>
+                    <td class="txt">${ret}</td>
+                    <td class="num">${Math.round(b)}</td>
+                    <td class="num">${Math.round(i)}</td>
+                    <td class="num">${Math.round(l)}</td>
+                </tr>`;
+            });
+
+            html += `</table></body></html>`;
+            const blob = new Blob([html], {type: 'application/vnd.ms-excel'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = `Reporte_Jekyll_${currentMode}_${new Date().toISOString().split('T')[0]}.xls`;
+            a.click();
+        };
+
+        // === MOTOR DE IMPRESIÓN (Generación de PDF) ===
+        window.descargarPDF = () => {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            if (!isMobile) { window.print(); } 
+            else {
+                const ticket = document.getElementById('ticket-real');
+                const modal = document.getElementById('modal-caja');
+                const controls = document.getElementById('modal-controles');
+                
+                controls.style.display = 'none';
+                modal.style.maxHeight = 'none';
+                ticket.classList.add('pdf-export-mode');
+                
+                html2pdf().set({
+                    margin: 10, filename: 'Documento_Jekyll.pdf', image: {type:'jpeg', quality:1},
+                    html2canvas: {scale:2, useCORS:true, backgroundColor:'#ffffff'},
+                    jsPDF: {unit:'mm', format:'a4', orientation:'portrait'}
+                }).from(ticket).save().then(() => {
+                    ticket.classList.remove('pdf-export-mode');
+                    modal.style.maxHeight = '95vh';
+                    controls.style.display = 'block';
+                });
+            }
+        };
+
+        // === MÓDULO DE USUARIOS (Login, Registro, Recuperación) ===
+        window.toggleAuth = () => {
+            const isLogin = document.getElementById('box-login').style.display !== 'none';
+            document.getElementById('box-login').style.display = isLogin ? 'none' : 'block';
+            document.getElementById('box-register').style.display = isLogin ? 'block' : 'none';
+            document.getElementById('auth-title').innerText = isLogin ? 'Nuevo Agente' : 'Acceso Agente';
+        };
+        
+        window.entrar = () => signInWithEmailAndPassword(auth, document.getElementById('log-email').value, document.getElementById('log-pass').value).catch(e => alert(e.message));
+        
+        window.registrar = async () => {
+            const n = document.getElementById('reg-nombre').value, e = document.getElementById('reg-email').value, p = document.getElementById('reg-pass').value;
+            if(p !== document.getElementById('reg-pass2').value) return alert("Claves no coinciden");
+            try {
+                const cr = await createUserWithEmailAndPassword(auth, e, p);
+                await updateProfile(cr.user, { displayName: n });
+                alert("Agente Creado");
+            } catch(err) { alert(err.message); }
+        };
+        
+        window.recuperarPass = () => {
+            const e = document.getElementById('log-email').value;
+            if(!e) return alert("Escribe tu correo en la casilla de arriba");
+            sendPasswordResetEmail(auth, e).then(() => alert("Correo de recuperación enviado")).catch(err => alert(err.message));
+        };
+        
+        window.salir = () => signOut(auth);
+
+    </script>
+</body>
+</html>
