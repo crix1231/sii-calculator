@@ -276,8 +276,10 @@
                 } else this.value = v;
             });
         };
-        formatRut(document.getElementById('inp-rut'));
-        formatRut(document.getElementById('pre-rut'));
+        const rutBoleta = document.getElementById('inp-rut');
+        if (rutBoleta) formatRut(rutBoleta);
+        const rutPresupuesto = document.getElementById('pre-rut');
+        if (rutPresupuesto) formatRut(rutPresupuesto);
 
         // === VERIFICACIÓN DE ESTADO DEL USUARIO ===
         onAuthStateChanged(auth, u => {
@@ -312,13 +314,16 @@
             let i = b * 0.1525;
             let l = b - i;
             
+            // Protección anticrash de inputs
+            const elBoleta = document.getElementById('inp-num-boleta');
+            
             tempDoc = { 
                 type: 'boleta', b, i, l, 
                 c: document.getElementById('inp-cliente').value || "S/N", 
                 r: document.getElementById('inp-rut').value || "S/R",
                 dir: document.getElementById('inp-direccion').value || "",
                 desc: document.getElementById('inp-descripcion').value || "Sin descripción",
-                numB: document.getElementById('inp-num-boleta').value || "1",
+                numB: elBoleta ? (elBoleta.value || "1") : "1",
                 retTipo: rTipo,
                 date: new Date().toLocaleDateString('es-CL')
             };
@@ -338,10 +343,14 @@
 
         window.guardarBoleta = async () => {
             if(!tempDoc || tempDoc.type !== 'boleta') return;
-            await addDoc(collection(db, "boletas"), { ...tempDoc, userId: user.uid, createdAt: serverTimestamp() });
-            document.getElementById('res-box').style.display = 'none';
-            document.getElementById('inp-monto').value = '';
-            alert("Boleta Guardada");
+            try {
+                await addDoc(collection(db, "boletas"), { ...tempDoc, userId: user.uid, createdAt: serverTimestamp() });
+                document.getElementById('res-box').style.display = 'none';
+                document.getElementById('inp-monto').value = '';
+                alert("Boleta Guardada Exitosamente");
+            } catch (err) {
+                alert("Hubo un error al guardar en la nube: " + err.message);
+            }
         };
 
         // === MÓDULO DE PRESUPUESTOS (Cálculo y Guardado) ===
@@ -372,13 +381,17 @@
 
             if(items.length === 0) return alert("Agrega al menos un ítem válido");
             
-            const vigenciaDias = parseInt(document.getElementById('pre-vigencia').value || 15);
+            // Protección anticrash para evitar errores nulos
+            const vigenciaEl = document.getElementById('pre-vigencia');
+            const numPEl = document.getElementById('pre-num');
+            const vigenciaDias = parseInt(vigenciaEl ? (vigenciaEl.value || 15) : 15);
+            
             const pData = {
                 type: 'presupuesto', userId: user.uid,
                 c: document.getElementById('pre-cliente').value || "S/N",
                 r: document.getElementById('pre-rut').value || "S/R",
                 dir: document.getElementById('pre-direccion').value || "",
-                numP: document.getElementById('pre-num').value || "1",
+                numP: numPEl ? (numPEl.value || "1") : "1",
                 items, totalBruto, totalImpuesto, totalFinal,
                 vigencia: vigenciaDias,
                 notas: document.getElementById('pre-notas').value,
@@ -386,10 +399,15 @@
                 validez: new Date(Date.now() + vigenciaDias*24*60*60*1000).toLocaleDateString('es-CL'),
                 createdAt: serverTimestamp()
             };
-            await addDoc(collection(db, "presupuestos"), pData);
-            alert("Presupuesto Guardado");
-            document.getElementById('pre-cliente').value = '';
-            document.getElementById('items-container').innerHTML = '<div class="item-row"><input type="text" placeholder="Servicio" class="i-desc"><input type="number" placeholder="Precio" class="i-price"></div>';
+            
+            try {
+                await addDoc(collection(db, "presupuestos"), pData);
+                alert("Presupuesto Guardado Exitosamente");
+                document.getElementById('pre-cliente').value = '';
+                document.getElementById('items-container').innerHTML = '<div class="item-row"><input type="text" placeholder="Servicio" class="i-desc"><input type="number" placeholder="Precio" class="i-price"></div>';
+            } catch (err) {
+                alert("Hubo un error al guardar en la nube: " + err.message);
+            }
         };
 
         // === SINCRONIZACIÓN Y LECTURA DE HISTORIAL ===
@@ -420,13 +438,15 @@
                 list.innerHTML += `<tr><td>${ref}</td><td>${d.c}</td><td class="t-green">${fmt.format(monto)}</td><td><button class="btn-main btn-icon" onclick="openDoc('${d.id}')">👁️</button><button class="btn-sec btn-icon" onclick="delDoc('${d.id}')">🗑️</button></td></tr>`;
             });
 
-            // Lógica de auto-sugerencia separada para boletas y presupuestos
+            // Lógica de auto-sugerencia separada y protegida contra nulos
             if(currentMode === 'boleta') {
                 currentBoletas.forEach(d => { let n = parseInt(d.numB); if(!isNaN(n) && n > maxBoleta) maxBoleta = n; });
-                document.getElementById('inp-num-boleta').value = maxBoleta > 0 ? (maxBoleta + 1) : 1;
+                const elBoleta = document.getElementById('inp-num-boleta');
+                if (elBoleta) elBoleta.value = maxBoleta > 0 ? (maxBoleta + 1) : 1;
             } else {
                 currentPresupuestos.forEach(d => { let n = parseInt(d.numP); if(!isNaN(n) && n > maxPre) maxPre = n; });
-                document.getElementById('pre-num').value = maxPre > 0 ? (maxPre + 1) : 1;
+                const elPre = document.getElementById('pre-num');
+                if (elPre) elPre.value = maxPre > 0 ? (maxPre + 1) : 1;
             }
         }
 
