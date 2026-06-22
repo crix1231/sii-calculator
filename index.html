@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jekyll | Calculadora & Presupuesto</title>
+    <!-- Librería para generar PDFs -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
@@ -97,9 +98,13 @@
 
     <div class="logo-container"><img src="logo.png" alt="JEKYLL"></div>
 
+    <!-- ========================================== -->
+    <!-- PANTALLA 1: LOGIN, REGISTRO Y RECUPERAR CLAVE -->
+    <!-- ========================================== -->
     <div id="auth-view" class="panel">
         <h2 id="auth-title">Acceso Agente</h2>
         
+        <!-- Formulario de Ingreso -->
         <div id="box-login">
             <input type="email" id="log-email" placeholder="Correo electrónico">
             <input type="password" id="log-pass" placeholder="Contraseña">
@@ -108,6 +113,7 @@
             <button onclick="toggleAuth()" class="btn-sec" style="background:#222;">Crear Cuenta Nueva</button>
         </div>
 
+        <!-- Formulario de Registro -->
         <div id="box-register" style="display:none;">
             <input type="text" id="reg-nombre" placeholder="Nombre y Apellido">
             <input type="email" id="reg-email" placeholder="Correo Electrónico">
@@ -118,42 +124,42 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- PANTALLA 2: APLICACIÓN PRINCIPAL (ERP) -->
+    <!-- ========================================== -->
     <div id="app-view" style="display:none; width: 100%; max-width: 500px;">
         
+        <!-- Pestañas de Navegación -->
         <div class="tabs">
             <button class="tab-btn active" id="tab-boleta" onclick="switchTab('boleta')">Boleta SII</button>
             <button class="tab-btn" id="tab-presupuesto" onclick="switchTab('presupuesto')">Presupuesto</button>
         </div>
 
+        <!-- PESTAÑA A: CALCULADORA DE BOLETAS SII -->
         <div id="view-boleta" class="panel">
             <p style="text-align:center; color:var(--cian); font-size:11px; margin-bottom:10px;">Agente: <span id="user-tag"></span></p>
             <h2>Calculadora Honorarios</h2>
-            <div class="radio-box">
-                <label class="radio-item"><input type="radio" name="calc-type" value="liq" checked> <span>Monto Líquido (Recibo)</span></label>
-                <label class="radio-item"><input type="radio" name="calc-type" value="bru"> <span>Monto Bruto (Total)</span></label>
-            </div>
-            <input type="number" id="inp-monto" placeholder="Monto Ej: 500000">
+            
+            <input type="number" id="inp-monto" placeholder="Monto Líquido a recibir (Ej: 500000)">
             <input type="text" id="inp-cliente" placeholder="Nombre Cliente / Empresa">
             <input type="text" id="inp-rut" placeholder="RUT Cliente" maxlength="12">
             <input type="text" id="inp-direccion" placeholder="Dirección y Comuna">
             <input type="text" id="inp-descripcion" placeholder="Descripción del Servicio">
             <input type="number" id="inp-num-boleta" placeholder="N° de Boleta">
-            <div class="radio-box">
-                <p style="margin: 0 0 10px 0; font-size: 12px; color: var(--cian); font-weight:bold;">¿Quién paga la retención?</p>
-                <label class="radio-item"><input type="radio" name="calc-retencion" value="empresa" checked> <span>La Empresa</span></label>
-                <label class="radio-item"><input type="radio" name="calc-retencion" value="yo"> <span>Yo mismo</span></label>
-            </div>
+            
             <button onclick="calcularBoleta()" class="btn-main">Calcular y Ver</button>
             
+            <!-- Resultados Calculadora Boleta -->
             <div id="res-box" class="res-area" style="display:none;">
-                <div class="res-line"><span>Bruto:</span><span id="v-bruto"></span></div>
+                <div class="res-line"><span>Bruto (A Cobrar):</span><span id="v-bruto"></span></div>
                 <div class="res-line"><span>Retención SII (15.25%):</span><span id="v-sii" class="t-red"></span></div>
-                <div class="res-line" style="border-bottom: 1px solid #444; padding-bottom:8px; margin-bottom:8px;"><span>Líquido:</span><span id="v-liq" class="t-green"></span></div>
+                <div class="res-line" style="border-bottom: 1px solid #444; padding-bottom:8px; margin-bottom:8px;"><span>Líquido (Tu Bolsillo):</span><span id="v-liq" class="t-green"></span></div>
                 <div id="msg-retencion" style="font-size:12px; color:#aaa; text-align:center; margin-bottom:10px; line-height:1.4;"></div>
                 <button onclick="guardarBoleta()" class="btn-sec" style="background:#00ccaa; color:black;">Guardar Boleta</button>
             </div>
         </div>
 
+        <!-- PESTAÑA B: GENERADOR DE PRESUPUESTOS -->
         <div id="view-presupuesto" class="panel" style="display:none;">
             <h2>Nuevo Presupuesto</h2>
             <input type="text" id="pre-cliente" placeholder="Cliente / Empresa">
@@ -161,17 +167,12 @@
             <input type="text" id="pre-direccion" placeholder="Dirección y Comuna">
             
             <input type="number" id="pre-num" placeholder="N° de Presupuesto (Ej: 1)">
-            
-            <div class="radio-box">
-                <p style="margin: 0 0 10px 0; font-size: 12px; color: var(--cian); font-weight:bold;">¿Valores ingresados son Líquidos?</p>
-                <label class="radio-item"><input type="radio" name="pre-calc-type" value="liq" checked> <span>Sí (Sumar 15.25% para el SII)</span></label>
-                <label class="radio-item"><input type="radio" name="pre-calc-type" value="bru"> <span>No (Ya incluyen impuestos)</span></label>
-            </div>
 
+            <!-- Lista de Servicios Dinámica -->
             <div id="items-container">
                 <div class="item-row">
                     <input type="text" placeholder="Servicio (Ej: Grabación)" class="i-desc">
-                    <input type="number" placeholder="Precio" class="i-price">
+                    <input type="number" placeholder="Precio Líquido" class="i-price">
                 </div>
             </div>
             <button onclick="addItem()" class="btn-add">+ Añadir Línea de Servicio</button>
@@ -183,6 +184,9 @@
             <button onclick="guardarPresupuesto()" class="btn-main">Generar Presupuesto</button>
         </div>
 
+        <!-- ========================================== -->
+        <!-- TABLA COMPARTIDA: HISTORIAL Y EXPORTACIÓN -->
+        <!-- ========================================== -->
         <div class="panel">
             <h3 id="hist-title">Historial de Boletas</h3>
             <table id="hist-table">
@@ -194,9 +198,13 @@
         </div>
     </div>
 
+    <!-- ========================================== -->
+    <!-- MODAL: VISTA PREVIA DEL DOCUMENTO PARA PDF -->
+    <!-- ========================================== -->
     <div id="modal-view" class="modal">
         <div class="modal-inner" id="modal-caja">
             
+            <!-- Lienzo del Documento -->
             <div id="ticket-real">
                 <p style="text-align:center; font-size:10px; color:#888; margin-bottom:5px; font-weight:bold; letter-spacing:1px;">JEKYLL | CALCULADORA & PRESUPUESTO</p>
                 <h3 id="pdf-tipo" style="text-align:center; margin-bottom:5px;"></h3>
@@ -208,11 +216,13 @@
                 <p style="margin: 5px 0; font-size:13px;"><strong>RUT:</strong> <span id="d-rut"></span></p>
                 <p style="margin: 5px 0; font-size:13px;"><strong>Dirección:</strong> <span id="d-dir"></span></p>
                 
+                <!-- Área específica para mostrar datos de Boleta -->
                 <div id="d-area-boleta">
                     <p style="margin: 5px 0; font-size:13px;"><strong>Descripción:</strong> <span id="d-desc"></span></p>
                     <p style="margin: 5px 0; font-size:12px; color:var(--magenta); margin-top:10px;">Agente Retenedor: <strong id="d-ret-tipo"></strong></p>
                 </div>
 
+                <!-- Área específica para mostrar datos de Presupuesto -->
                 <div id="d-area-presupuesto" style="display:none;">
                     <table style="width:100%; margin:15px 0; border:1px solid #444;">
                         <thead><tr style="background:#222;"><th style="text-align:left; padding:5px;">Servicio</th><th>Valor</th></tr></thead>
@@ -224,6 +234,7 @@
                 
                 <hr style="border:0; border-top: 1px dashed #666; margin: 15px 0;">
                 
+                <!-- Resultados Finales del Documento -->
                 <div id="d-res-subtotal" class="res-line"><span>Monto Bruto:</span> <span id="d-bru"></span></div>
                 <div id="d-res-sii" class="res-line"><span>Impuesto SII (15.25%):</span> <span id="d-sii" class="t-red"></span></div>
                 <div class="res-line" style="font-size:18px; font-weight:bold; margin-top:15px;"><span id="d-label-total">Total:</span> <span id="d-liq" class="t-green"></span></div>
@@ -231,6 +242,7 @@
                 <p id="pdf-footer" style="text-align:center; font-size:10px; margin-top:30px; color:#888;"></p>
             </div>
 
+            <!-- Controles del Modal -->
             <div id="modal-controles">
                 <button id="btn-convertir" class="btn-main" style="background:#ff8800; display:none;">⚡ Convertir a Boleta SII</button>
                 <button onclick="descargarPDF()" class="btn-main" style="background:#0088ff;">📄 Descargar PDF</button>
@@ -239,11 +251,15 @@
         </div>
     </div>
 
+    <!-- Pie de página de la Aplicación -->
     <div class="footer">
         <p>Desarrollado por <strong>Jekyll & Gemini</strong></p>
         <p>¡Para que el SII no te lleve con Maduro!</p>
     </div>
 
+    <!-- ========================================== -->
+    <!-- LOGICA DEL SISTEMA (JAVASCRIPT) -->
+    <!-- ========================================== -->
     <script type="module">
         // === CONEXIÓN A BASE DE DATOS FIREBASE ===
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
@@ -306,13 +322,12 @@
         // === MÓDULO DE BOLETAS (Cálculo y Guardado) ===
         window.calcularBoleta = () => {
             const v = parseFloat(document.getElementById('inp-monto').value);
-            const t = document.querySelector('input[name="calc-type"]:checked').value;
-            const rTipo = document.querySelector('input[name="calc-retencion"]:checked').value;
             if(!v || isNaN(v)) return alert("Ingresa un monto válido");
             
-            let b = (t==='liq') ? v / 0.8475 : v;
+            // Asume siempre que el valor ingresado es líquido
+            let b = v / 0.8475;
             let i = b * 0.1525;
-            let l = b - i;
+            let l = v;
             
             // Protección anticrash de inputs
             const elBoleta = document.getElementById('inp-num-boleta');
@@ -324,7 +339,7 @@
                 dir: document.getElementById('inp-direccion').value || "",
                 desc: document.getElementById('inp-descripcion').value || "Sin descripción",
                 numB: elBoleta ? (elBoleta.value || "1") : "1",
-                retTipo: rTipo,
+                retTipo: 'yo', // Por defecto el freelancer paga la retención en este modelo
                 date: new Date().toLocaleDateString('es-CL')
             };
             
@@ -333,11 +348,8 @@
             document.getElementById('v-liq').innerText = fmt.format(l);
             
             const msgBox = document.getElementById('msg-retencion');
-            if(rTipo === 'empresa') {
-                msgBox.innerHTML = `✅ La empresa pagará el impuesto. Tú recibes <strong style="color:var(--cian)">${fmt.format(l)}</strong> líquidos a tu cuenta.`;
-            } else {
-                msgBox.innerHTML = `⚠️ Tú pagas el impuesto. Cóbrale <strong style="color:var(--cian)">${fmt.format(b)}</strong> al cliente y guarda <strong>${fmt.format(i)}</strong> para el SII.`;
-            }
+            msgBox.innerHTML = `⚠️ Tú pagas el impuesto. Cóbrale <strong style="color:var(--cian)">${fmt.format(b)}</strong> al cliente y guarda <strong>${fmt.format(i)}</strong> para el SII.`;
+            
             document.getElementById('res-box').style.display = 'block';
         };
 
@@ -357,13 +369,12 @@
         window.addItem = () => {
             const row = document.createElement('div');
             row.className = 'item-row';
-            row.innerHTML = `<input type="text" placeholder="Servicio" class="i-desc"><input type="number" placeholder="Precio" class="i-price">`;
+            row.innerHTML = `<input type="text" placeholder="Servicio" class="i-desc"><input type="number" placeholder="Precio Líquido" class="i-price">`;
             document.getElementById('items-container').appendChild(row);
         };
 
         window.guardarPresupuesto = async () => {
             const itemsInput = document.querySelectorAll('.item-row');
-            const isLiq = document.querySelector('input[name="pre-calc-type"]:checked').value === 'liq';
             const items = [];
             let totalBruto = 0, totalImpuesto = 0, totalFinal = 0;
 
@@ -371,9 +382,10 @@
                 const d = row.querySelector('.i-desc').value;
                 const val = parseFloat(row.querySelector('.i-price').value || 0);
                 if(d && !isNaN(val)) {
-                    let b, i, l;
-                    if(isLiq) { b = val / 0.8475; i = b * 0.1525; l = val; }
-                    else { b = val; i = val * 0.1525; l = val - i; }
+                    // Asume siempre que el valor ingresado es líquido
+                    let b = val / 0.8475;
+                    let i = b * 0.1525;
+                    let l = val;
                     items.push({d, p: b, tax: i, liq: l});
                     totalBruto += b; totalImpuesto += i; totalFinal += l;
                 }
@@ -404,7 +416,7 @@
                 await addDoc(collection(db, "presupuestos"), pData);
                 alert("Presupuesto Guardado Exitosamente");
                 document.getElementById('pre-cliente').value = '';
-                document.getElementById('items-container').innerHTML = '<div class="item-row"><input type="text" placeholder="Servicio" class="i-desc"><input type="number" placeholder="Precio" class="i-price"></div>';
+                document.getElementById('items-container').innerHTML = '<div class="item-row"><input type="text" placeholder="Servicio" class="i-desc"><input type="number" placeholder="Precio Líquido" class="i-price"></div>';
             } catch (err) {
                 alert("Hubo un error al guardar en la nube: " + err.message);
             }
@@ -503,7 +515,7 @@
                     switchTab('boleta');
                     document.getElementById('inp-cliente').value = d.c;
                     document.getElementById('inp-rut').value = d.r;
-                    document.getElementById('inp-monto').value = Math.round(d.totalFinal);
+                    document.getElementById('inp-monto').value = Math.round(d.totalFinal); // El liquido original
                     document.getElementById('inp-direccion').value = d.dir;
                     document.getElementById('inp-descripcion').value = d.items[0].d + "... (Viene de presupuesto)";
                     cerrarM();
@@ -527,6 +539,7 @@
                 </style>
             </head><body style="background:#050505;">
                 <table border="1" style="border-collapse:collapse; font-family:Arial; width:100%; text-align:center;">
+                    <!-- RESUMEN SUPERIOR UNIVERSAL (FORMULAS EN INGLES Y COMAS) -->
                     <tr style="background:#121212; color:#00ffff; font-weight:bold;">
                         <td colspan="7" style="text-align:right; font-size:16px;">TOTAL BRUTO ACUMULADO:</td>
                         <td class="num" style="font-size:16px;">=SUM(H6:H500)</td>
